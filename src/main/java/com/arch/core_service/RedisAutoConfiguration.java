@@ -1,6 +1,8 @@
 package com.arch.core_service;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -8,7 +10,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -23,21 +24,19 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-@Configuration
-@RequiredArgsConstructor
+@AutoConfiguration
+@AutoConfigureBefore(CacheAutoConfiguration.class)
 @ConditionalOnClass(RedisConnectionFactory.class)
-@EnableConfigurationProperties(RedisProperties.class)
 @ConditionalOnProperty(name = "core.cache.enabled", havingValue = "true", matchIfMissing = true)
 @EnableCaching
+@EnableConfigurationProperties(RedisProperties.class)
 public class RedisAutoConfiguration {
-
-    private final RedisProperties properties;
 
     @Bean
     @ConditionalOnMissingBean
-    public RedisConnectionFactory redisConnectionFactory() {
+    public RedisConnectionFactory redisConnectionFactory(RedisProperties properties) {
+
         // Server config (standalone, plain TCP)
         RedisStandaloneConfiguration server = new RedisStandaloneConfiguration(
                 properties.getHost(), properties.getPort());
@@ -55,7 +54,7 @@ public class RedisAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public CacheManager cacheManager(RedisConnectionFactory cf) {
+    public CacheManager cacheManager(RedisConnectionFactory cf, RedisProperties properties) {
         var keySer = new StringRedisSerializer();
         var valSer = new GenericJackson2JsonRedisSerializer();
 
@@ -92,7 +91,6 @@ public class RedisAutoConfiguration {
         return builder.build();
     }
 
-    // Optional templates (no SSL logic here either)
     @Bean
     @ConditionalOnMissingBean
     public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory cf) {

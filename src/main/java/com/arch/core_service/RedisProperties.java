@@ -14,7 +14,7 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @Validated
-@ConfigurationProperties(prefix = "spring.redis") // custom prefix (not spring.redis)
+@ConfigurationProperties(prefix = "spring.redis")
 public class RedisProperties {
 
     @NotBlank private String host = "localhost";
